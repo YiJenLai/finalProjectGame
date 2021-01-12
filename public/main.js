@@ -1,6 +1,4 @@
 
-
-
 window.onload = function () {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
@@ -33,7 +31,6 @@ window.onload = function () {
                 // 利用that因為在function內部的this會變成this.image
                 context.drawImage(this.image, this.x, this.y);
             }
-
         }
         toRight() {
             this.x += 50;
@@ -58,7 +55,7 @@ window.onload = function () {
         }
         //1. 左右移動的動畫(根據character判斷)
         // 1.1 不可以重疊
-        //1.1.1 川普左 拜登右 => border same => keycode judgement
+        //  1.1.1 川普左 拜登右 => border same => keycode judgement
         // 1.2 最多到window寬
         // 1.3 移動速度有上限
         //2. 加入音效 動畫
@@ -68,14 +65,16 @@ window.onload = function () {
 
     class Drop {
         constructor() {
+            // 初始位置
             this.x = Math.random() * canvas.width;
             this.y = 0;
+            //給圖片設置監聽事件
             this.ready = false;
         }
 
         paint() {
             if (this.ready) {
-                context.drawImage(this.image, this.x, this.y,150,150);
+                context.drawImage(this.image, this.x, this.y, 100, 100);
             }
         }
 
@@ -90,11 +89,33 @@ window.onload = function () {
         //可以設定遊戲難度
         constructor() {
             super();
-            this.image = new Image();
-            this.image.src = 'assets/mask_normal.png';
+            this.image = new Image(132,124);
+            this.image.src = 'assets/virus.png';
             var that = this;
             this.image.onload = function () {
                 that.ready = true;
+            }
+        }
+        paint() {
+            if (this.ready) {
+                context.drawImage(this.image, this.x, this.y, 70, 70);
+            }
+        }
+    }
+
+    class Vote extends Drop {
+        constructor() {
+            super();
+            this.image = new Image(132,124);
+            this.image.src = 'assets/vote.png';
+            var that = this;
+            this.image.onload = function () {
+                that.ready = true;
+            }
+        }
+        paint() {
+            if (this.ready) {
+                context.drawImage(this.image, this.x, this.y, 100, 100);
             }
         }
     }
@@ -103,10 +124,15 @@ window.onload = function () {
         constructor(){
             super();
             this.image = new Image(132,124);
-            this.image.src = 'assets/mask_only.png';
+            this.image.src = 'assets/mask.png';
             var that = this;
             this.image.onload = function () {
                 that.ready = true;
+            }
+        }
+        paint() {
+            if (this.ready) {
+                context.drawImage(this.image, this.x, this.y, 200, 180);
             }
         }
     }
@@ -133,8 +159,47 @@ window.onload = function () {
 
 
     var masks = [];
-    var virus_s = [];
+    var virus_s = [];  //複數
     var votes = [];
+
+    // num = 一次創建多少個virus
+    function virusCreate(virus_s,num) {
+        for (let i = 0; i < num; i++) {
+            var virus = new Virus();
+            virus_s.push(virus);
+        }
+    }
+    //繪製virus
+    function virusPaint(virus_s) {
+        for(let i = 0; i < virus_s.length; i++){
+            virus_s[i].paint();
+        }
+    }
+    function virusMove(virus_s) {
+        for(let i = 0; i < virus_s.length; i++){
+            virus_s[i].step();
+        }    
+    }
+
+    // num = 一次創建多少個vote
+    function votesCreate(votes,num) {
+        for (let i = 0; i < num; i++) {
+            var vote = new Vote();
+            votes.push(vote);
+        }
+    }
+    //繪製votes
+    function votesPaint(votes) {
+        for(let i = 0; i < votes.length; i++){
+            votes[i].paint();
+        }
+    }
+    function votesMove(masks) {
+        for(let i = 0; i < votes.length; i++){
+            votes[i].step();
+        }    
+    }
+
     // num = 一次創建多少個mask
     function masksCreate(masks,num) {
         for (let i = 0; i < num; i++) {
@@ -142,19 +207,12 @@ window.onload = function () {
             masks.push(mask);
         }
     }
-
-    function votesPaint(votes) {
-        for(let i = 0; i < votes.length; i++){
-            votes[i].paint();
-        }
-    }
-    //繪製
+    //繪製masks
     function masksPaint(masks) {
         for(let i = 0; i < masks.length; i++){
             masks[i].paint();
         }
     }
-
     function masksMove(masks) {
         for(let i = 0; i < masks.length; i++){
             masks[i].step();
@@ -187,6 +245,7 @@ window.onload = function () {
 
     }
 
+    //檢查川普和拜登碰撞
     function checkCollison(Trump, Biden, keycode) {
 
         var borderLeftBiden = Biden.x - Biden.image.width / 2;
@@ -221,27 +280,47 @@ window.onload = function () {
     var Biden = new Player('Emily', 'right');
     Biden.paint();
 
+    //掉落mask數量、時間
     setInterval(function () {
-        masksCreate(masks,2);
+        masksCreate(masks,1);
+    },5000)
+    //掉落virus數量、時間
+    setInterval(function () {
+        virusCreate(virus_s,2);
     },2000)
+    setInterval(function () {
+        virusCreate(virus_s,1);
+    },5000)
+    //掉落vote數量、時間
+    setInterval(function () {
+        votesCreate(votes,1);
+    },2000)
+    setInterval(function () {
+        votesCreate(votes,2);
+    },500)
+    setInterval(function () {
+        votesCreate(votes,2);
+    },1000)
 
     setInterval(function () {
         if (bgReady) {
             context.drawImage(bg, 0, 0);
         }
-
-        // checkHit(masks,Trump);
-        // checkHit(masks,Biden);
-        // Trump.paint();
-        // Biden.paint();
-        // masksMove(masks);
-        // masksPaint(masks);
-    }, 10);
-
-
-
-    
-
+            // checkHit(masks,Trump);
+            // checkHit(masks,Biden);
+            // checkHit(virus_s,Trump);
+            // checkHit(virus_s,Biden);
+            // checkHit(votes,Trump);
+            // checkHit(votes,Biden);
+            // Trump.paint();
+            // Biden.paint();
+            // masksMove(masks);
+            // masksPaint(masks);
+            // votesMove(votes);
+            // votesPaint(votes);
+            // virusMove(virus_s);
+            // virusPaint(virus_s);
+    }, 10);  
 }
 
 
